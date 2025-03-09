@@ -13,6 +13,7 @@ class UsersScreen extends StatefulWidget {
 class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  final TextEditingController _userNameController = TextEditingController();
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _animationController.dispose();
+    _userNameController.dispose();
     super.dispose();
   }
 
@@ -45,29 +47,27 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   }
 
   Widget _buildAddUserDialog() {
-    String newUserName = '';
-    
     return AlertDialog(
       title: Text('Thêm nhân viên mới', textAlign: TextAlign.center),
       content: TextField(
+        controller: _userNameController,
         decoration: InputDecoration(
           labelText: 'Tên nhân viên',
           hintText: 'Nhập tên nhân viên',
         ),
-        onChanged: (value) {
-          newUserName = value;
-        },
         autofocus: true,
       ),
       actions: [
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
+            _userNameController.clear();
           },
           child: Text('Hủy'),
         ),
         TextButton(
           onPressed: () {
+            final newUserName = _userNameController.text;
             if (newUserName.trim().isNotEmpty) {
               final service = Provider.of<LibraryService>(context, listen: false);
               service.addUser(User(
@@ -76,6 +76,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 borrowedBooks: [],
               ));
               Navigator.of(context).pop();
+              _userNameController.clear();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã thêm nhân viên mới')),
               );

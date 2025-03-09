@@ -50,8 +50,21 @@ class LibraryService extends ChangeNotifier {
     _books.removeWhere((book) => book.id == id);
     
     // Update borrowed books for all users
-    for (var user in _users) {
-      user.borrowedBooks.remove(id);
+    for (var i = 0; i < _users.length; i++) {
+      final user = _users[i];
+      if (user.borrowedBooks.contains(id)) {
+        final updatedBorrowedBooks = List<String>.from(user.borrowedBooks)..remove(id);
+        _users[i] = User(
+          id: user.id,
+          name: user.name,
+          borrowedBooks: updatedBorrowedBooks,
+        );
+        
+        // Update current user if needed
+        if (_currentUser.id == user.id) {
+          _currentUser = _users[i];
+        }
+      }
     }
     
     notifyListeners();
@@ -66,14 +79,28 @@ class LibraryService extends ChangeNotifier {
     final userIndex = _users.indexWhere((u) => u.id == _currentUser.id);
     
     if (userIndex != -1) {
-      if (_users[userIndex].borrowedBooks.contains(bookId)) {
-        _users[userIndex].borrowedBooks.remove(bookId);
+      final user = _users[userIndex];
+      final borrowedBooks = List<String>.from(user.borrowedBooks);
+      
+      if (borrowedBooks.contains(bookId)) {
+        borrowedBooks.remove(bookId);
       } else {
-        _users[userIndex].borrowedBooks.add(bookId);
+        borrowedBooks.add(bookId);
       }
       
+      // Create a new user object with updated borrowed books
+      final updatedUser = User(
+        id: user.id,
+        name: user.name,
+        borrowedBooks: borrowedBooks,
+      );
+      
+      // Update the user in the list
+      _users[userIndex] = updatedUser;
+      
       // Update current user reference
-      _currentUser = _users[userIndex];
+      _currentUser = updatedUser;
+      
       notifyListeners();
     }
   }

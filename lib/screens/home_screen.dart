@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  final TextEditingController _bookTitleController = TextEditingController();
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _animationController.dispose();
+    _bookTitleController.dispose();
     super.dispose();
   }
 
@@ -100,29 +102,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildAddBookDialog() {
-    String newBookTitle = '';
-    
     return AlertDialog(
       title: Text('Thêm sách mới', textAlign: TextAlign.center),
       content: TextField(
+        controller: _bookTitleController,
         decoration: InputDecoration(
           labelText: 'Tên sách',
           hintText: 'Nhập tên sách',
         ),
-        onChanged: (value) {
-          newBookTitle = value;
-        },
         autofocus: true,
       ),
       actions: [
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
+            _bookTitleController.clear();
           },
           child: Text('Hủy'),
         ),
         TextButton(
           onPressed: () {
+            final newBookTitle = _bookTitleController.text;
             if (newBookTitle.trim().isNotEmpty) {
               final service = Provider.of<LibraryService>(context, listen: false);
               service.addBook(Book(
@@ -130,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 title: newBookTitle,
               ));
               Navigator.of(context).pop();
+              _bookTitleController.clear();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã thêm sách mới')),
               );
