@@ -1,15 +1,5 @@
 
-class User {
-  final String id;
-  final String name;
-  List<String> borrowedBooks;
-
-  User({
-    required this.id,
-    required this.name,
-    required this.borrowedBooks,
-  });
-}
+// Models for the library app
 
 class Book {
   final String id;
@@ -18,5 +8,17 @@ class Book {
   Book({
     required this.id,
     required this.title,
+  });
+}
+
+class User {
+  final String id;
+  final String name;
+  final List<String> borrowedBooks;
+
+  User({
+    required this.id,
+    required this.name,
+    required this.borrowedBooks,
   });
 }

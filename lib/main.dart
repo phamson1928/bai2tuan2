@@ -7,9 +7,12 @@ import 'screens/users_screen.dart';
 import 'services/library_service.dart';
 
 void main() {
+  // Create and initialize the service before the app starts
+  final libraryService = LibraryService();
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => LibraryService(),
+    ChangeNotifierProvider.value(
+      value: libraryService,
       child: LibraryApp(),
     ),
   );

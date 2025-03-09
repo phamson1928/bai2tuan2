@@ -13,13 +13,13 @@ class LibraryService extends ChangeNotifier {
   LibraryService._internal();
   
   // State
-  List<User> _users = [
+  final List<User> _users = [
     User(id: '1', name: 'Nguyen Van A', borrowedBooks: ['1', '2']),
     User(id: '2', name: 'Tran Thi B', borrowedBooks: ['3']),
     User(id: '3', name: 'Le Van C', borrowedBooks: []),
   ];
   
-  List<Book> _books = [
+  final List<Book> _books = [
     Book(id: '1', title: 'Sách 01'),
     Book(id: '2', title: 'Sách 02'),
     Book(id: '3', title: 'Sách 03'),
@@ -48,6 +48,12 @@ class LibraryService extends ChangeNotifier {
   
   void removeBook(String id) {
     _books.removeWhere((book) => book.id == id);
+    
+    // Update borrowed books for all users
+    for (var user in _users) {
+      user.borrowedBooks.remove(id);
+    }
+    
     notifyListeners();
   }
   
