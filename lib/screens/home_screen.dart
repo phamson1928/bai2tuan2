@@ -1,10 +1,12 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/library.dart';
 import '../widgets/library_header.dart';
 import '../widgets/user_selector.dart';
 import '../widgets/book_list.dart';
 import '../widgets/app_navigation.dart';
+import '../services/library_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,30 +14,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late List<User> users;
-  late List<Book> books;
-  late User currentUser;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initial sample data
-    users = [
-      User(id: '1', name: 'Nguyen Van A', borrowedBooks: ['1', '2']),
-      User(id: '2', name: 'Tran Thi B', borrowedBooks: ['3']),
-      User(id: '3', name: 'Le Van C', borrowedBooks: []),
-    ];
-    
-    books = [
-      Book(id: '1', title: 'Sách 01'),
-      Book(id: '2', title: 'Sách 02'),
-      Book(id: '3', title: 'Sách 03'),
-    ];
-    
-    currentUser = users[0];
     
     // Setup animation
     _animationController = AnimationController(
@@ -65,36 +49,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void handleSelectUser(User user) {
-    setState(() {
-      currentUser = user;
-    });
+    Provider.of<LibraryService>(context, listen: false).setCurrentUser(user);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Đã chọn: ${user.name}')),
     );
   }
 
   void handleToggleBook(String bookId) {
-    setState(() {
-      int userIndex = users.indexWhere((u) => u.id == currentUser.id);
-      
-      if (userIndex != -1) {
-        User user = users[userIndex];
-        
-        if (user.borrowedBooks.contains(bookId)) {
-          user.borrowedBooks.remove(bookId);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã trả sách')),
-          );
-        } else {
-          user.borrowedBooks.add(bookId);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã mượn sách')),
-          );
-        }
-        
-        currentUser = users[userIndex];
-      }
-    });
+    Provider.of<LibraryService>(context, listen: false).toggleBookBorrowing(bookId);
+    
+    // Show appropriate message
+    final service = Provider.of<LibraryService>(context, listen: false);
+    final isBorrowed = service.currentUser.borrowedBooks.contains(bookId);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(isBorrowed ? 'Đã mượn sách' : 'Đã trả sách')),
+    );
   }
 
   void handleAddBook() {
@@ -105,15 +75,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildUserSelectDialog() {
+    final service = Provider.of<LibraryService>(context, listen: false);
+    
     return AlertDialog(
       title: Text('Chọn nhân viên', textAlign: TextAlign.center),
       content: Container(
         width: double.maxFinite,
         child: ListView.builder(
           shrinkWrap: true,
-          itemCount: users.length,
+          itemCount: service.users.length,
           itemBuilder: (context, index) {
-            final user = users[index];
+            final user = service.users[index];
             return ListTile(
               title: Text(user.name),
               onTap: () {
@@ -152,12 +124,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         TextButton(
           onPressed: () {
             if (newBookTitle.trim().isNotEmpty) {
-              setState(() {
-                books.add(Book(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  title: newBookTitle,
-                ));
-              });
+              final service = Provider.of<LibraryService>(context, listen: false);
+              service.addBook(Book(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                title: newBookTitle,
+              ));
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã thêm sách mới')),
@@ -176,42 +147,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FadeTransition(
-        opacity: _animation,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  LibraryHeader(),
-                  UserSelector(
-                    currentUser: currentUser,
-                    onChangeUser: handleChangeUser,
+    // Use Consumer to listen to changes in the service
+    return Consumer<LibraryService>(
+      builder: (context, service, child) {
+        return Scaffold(
+          body: FadeTransition(
+            opacity: _animation,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      LibraryHeader(),
+                      UserSelector(
+                        currentUser: service.currentUser,
+                        onChangeUser: handleChangeUser,
+                      ),
+                      BookList(
+                        books: service.books,
+                        borrowedBooks: service.currentUser.borrowedBooks,
+                        onToggleBook: handleToggleBook,
+                      ),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: handleAddBook,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF1E88E5), // library-blue
+                          minimumSize: Size(double.infinity, 50),
+                        ),
+                        child: Text('Thêm', style: TextStyle(fontSize: 16)),
+                      ),
+                      SizedBox(height: 80), // Space for bottom navigation
+                    ],
                   ),
-                  BookList(
-                    books: books,
-                    borrowedBooks: currentUser.borrowedBooks,
-                    onToggleBook: handleToggleBook,
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: handleAddBook,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF1E88E5), // library-blue
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                    child: Text('Thêm', style: TextStyle(fontSize: 16)),
-                  ),
-                  SizedBox(height: 80), // Space for bottom navigation
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-      bottomNavigationBar: AppNavigation(currentIndex: 0),
+          bottomNavigationBar: AppNavigation(currentIndex: 0),
+        );
+      }
     );
   }
 }

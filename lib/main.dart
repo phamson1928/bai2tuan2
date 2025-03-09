@@ -1,11 +1,18 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/books_screen.dart';
 import 'screens/users_screen.dart';
+import 'services/library_service.dart';
 
 void main() {
-  runApp(LibraryApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LibraryService(),
+      child: LibraryApp(),
+    ),
+  );
 }
 
 class LibraryApp extends StatelessWidget {
